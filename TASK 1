@@ -1,0 +1,158 @@
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class PasswordStrengthChecker {
+
+    // List of common passwords
+    private static final List<String> commonPasswords = Arrays.asList(
+            "password", "123456", "123456789", "qwerty", "abc123", "password1", "welcome"
+    );
+
+    public static void main(String[] args) {
+        String password = "P@ssw0rd123";
+        PasswordFeedback feedback = assessPasswordStrength(password);
+        System.out.println("Password Strength: " + feedback.getStrength());
+        System.out.println("Score: " + feedback.getScore());
+        if (!feedback.getFeedback().isEmpty()) {
+            System.out.println("Feedback:");
+            feedback.getFeedback().forEach(System.out::println);
+        }
+    }
+
+    public static PasswordFeedback assessPasswordStrength(String password) {
+        int score = 0;
+        PasswordFeedback feedback = new PasswordFeedback();
+
+        // Length Check
+        int length = password.length();
+        if (length < 8) {
+            feedback.addFeedback("Password is too short.");
+            score += 10;
+        } else if (length >= 8 && length <= 12) {
+            score += 30;
+        } else {
+            score += 50;
+        }
+
+        // Complexity Check
+        int complexityScore = 0;
+        if (containsUppercase(password)) complexityScore++;
+        if (containsLowercase(password)) complexityScore++;
+        if (containsDigit(password)) complexityScore++;
+        if (containsSpecialCharacter(password)) complexityScore++;
+
+        switch (complexityScore) {
+            case 1:
+                feedback.addFeedback("Password is too simple.");
+                score += 10;
+                break;
+            case 2:
+                score += 20;
+                break;
+            case 3:
+                score += 40;
+                break;
+            case 4:
+                score += 60;
+                break;
+            default:
+                feedback.addFeedback("Password lacks complexity.");
+                break;
+        }
+
+        // Common Password Check
+        if (commonPasswords.contains(password.toLowerCase())) {
+            feedback.addFeedback("Password is too common.");
+            score = Math.max(score - 40, 0);
+        }
+
+        // Repetition and Sequential Patterns Check
+        if (hasRepetitiveCharacters(password)) {
+            feedback.addFeedback("Password contains repetitive characters.");
+            score = Math.max(score - 20, 0);
+        }
+
+        if (hasSequentialCharacters(password)) {
+            feedback.addFeedback("Password contains sequential characters.");
+            score = Math.max(score - 20, 0);
+        }
+
+        // Categorize the strength
+        if (score < 30) {
+            feedback.setStrength("Very Weak");
+        } else if (score < 50) {
+            feedback.setStrength("Weak");
+        } else if (score < 70) {
+            feedback.setStrength("Moderate");
+        } else if (score < 90) {
+            feedback.setStrength("Strong");
+        } else {
+            feedback.setStrength("Very Strong");
+        }
+
+        feedback.setScore(score);
+        return feedback;
+    }
+
+    private static boolean containsUppercase(String s) {
+        return s.chars().anyMatch(Character::isUpperCase);
+    }
+
+    private static boolean containsLowercase(String s) {
+        return s.chars().anyMatch(Character::isLowerCase);
+    }
+
+    private static boolean containsDigit(String s) {
+        return s.chars().anyMatch(Character::isDigit);
+    }
+
+    private static boolean containsSpecialCharacter(String s) {
+        Pattern pattern = Pattern.compile("[@#$%^&+=!]");
+        Matcher matcher = pattern.matcher(s);
+        return matcher.find();
+    }
+
+    private static boolean hasRepetitiveCharacters(String s) {
+        return Pattern.compile("(.)\\1{2,}").matcher(s).find();
+    }
+
+    private static boolean hasSequentialCharacters(String s) {
+        return Pattern.compile("(012|123|234|345|456|567|678|789|890|abc|bcd|cde)").matcher(s.toLowerCase()).find();
+    }
+}
+
+class PasswordFeedback {
+    private int score;
+    private String strength;
+    private List<String> feedback;
+
+    public PasswordFeedback() {
+        this.feedback = new java.util.ArrayList<>();
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
+    public String getStrength() {
+        return strength;
+    }
+
+    public void setStrength(String strength) {
+        this.strength = strength;
+    }
+
+    public List<String> getFeedback() {
+        return feedback;
+    }
+
+    public void addFeedback(String feedback) {
+        this.feedback.add(feedback);
+    }
+}
